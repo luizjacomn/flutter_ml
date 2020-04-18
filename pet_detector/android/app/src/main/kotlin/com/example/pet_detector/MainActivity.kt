@@ -1,4 +1,4 @@
-package com.example.pet_detector
+package com.luizjacomn.pet_detector
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

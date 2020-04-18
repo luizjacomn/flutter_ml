@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
 
@@ -12,42 +13,57 @@ class DetectorPage extends StatefulWidget {
 
 class _DetectorPageState extends State<DetectorPage> {
   bool _isLoading;
-  File _file;
+  File _image;
   List _output;
 
   @override
   void initState() {
     super.initState();
     _isLoading = true;
-    loadModel().then((value) {
+    _loadModel().then((value) {
       setState(() {
         _isLoading = false;
       });
     });
   }
 
-  Future<String> loadModel() async {
+  Future<String> _loadModel() async {
     return await Tflite.loadModel(
       model: 'assets/model_unquant.tflite',
       labels: 'assets/labels.txt',
     );
   }
 
-  Future chooseFile() async {
-    var image = await ImagePicker.pickImage(source: ImageSource.gallery);
-    if (image == null) return null;
+  Future _captureImage() async {
+    var file = await ImagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 50,
+    );
+    if (file == null) return null;
 
     setState(() {
       _isLoading = true;
-      _file = image;
+      _image = file;
     });
 
-    classifyImage(image);
+    _classifyImage(file);
   }
 
-  Future classifyImage(File image) async {
+  Future _chooseFile() async {
+    var file = await ImagePicker.pickImage(source: ImageSource.gallery);
+    if (file == null) return null;
+
+    setState(() {
+      _isLoading = true;
+      _image = file;
+    });
+
+    _classifyImage(file);
+  }
+
+  Future _classifyImage(File file) async {
     var output = await Tflite.runModelOnImage(
-      path: image.path,
+      path: file.path,
       numResults: 2,
       threshold: 0.5,
       imageMean: 127.5,
@@ -77,17 +93,27 @@ class _DetectorPageState extends State<DetectorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pet Detector'),
       ),
       body: Container(
+        width: size.width,
         child: _isLoading
             ? const Center(child: const CircularProgressIndicator())
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  _file != null ? Image.file(_file) : Container(),
+                  _image != null
+                      ? Image.file(
+                          _image,
+                          height: size.height / 2,
+                          fit: BoxFit.fitHeight,
+                        )
+                      : Container(),
                   const SizedBox(height: 8.0),
                   _output != null
                       ? Chip(
@@ -96,7 +122,7 @@ class _DetectorPageState extends State<DetectorPage> {
                             'It\'s a $_className'.toUpperCase(),
                             style: TextStyle(
                               color: Theme.of(context).primaryColor,
-                              fontSize: 20.0,
+                              fontSize: 16.0,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -107,16 +133,36 @@ class _DetectorPageState extends State<DetectorPage> {
                       'Confidence level: $_confidenceLevel%',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20.0,
+                        fontSize: 16.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                 ],
               ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add_photo_alternate),
-        onPressed: chooseFile,
+      floatingActionButton: SpeedDial(
+        animatedIcon: AnimatedIcons.menu_close,
+        animatedIconTheme: IconThemeData(size: 22.0),
+        closeManually: false,
+        curve: Curves.bounceIn,
+        overlayColor: Colors.black,
+        overlayOpacity: 0.5,
+        tooltip: 'Select image source',
+        elevation: 8.0,
+        shape: CircleBorder(),
+        children: [
+          SpeedDialChild(
+            child: Icon(Icons.add_photo_alternate),
+            labelWidget:
+                const Text('Gallery', style: TextStyle(fontSize: 16.0)),
+            onTap: _chooseFile,
+          ),
+          SpeedDialChild(
+            child: Icon(Icons.add_a_photo),
+            labelWidget: const Text('Camera', style: TextStyle(fontSize: 16.0)),
+            onTap: _captureImage,
+          ),
+        ],
       ),
     );
   }

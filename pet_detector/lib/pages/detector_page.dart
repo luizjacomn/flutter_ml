@@ -62,6 +62,13 @@ class _DetectorPageState extends State<DetectorPage> {
     });
   }
 
+  String get _className {
+    var className = _output[0]['label'];
+    var regex = RegExp('\([A-Z]\)\\w+');
+    var matcher = regex.firstMatch(className);
+    return matcher.group(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,10 +87,7 @@ class _DetectorPageState extends State<DetectorPage> {
                       ? Chip(
                           backgroundColor: Theme.of(context).accentColor,
                           label: Text(
-                            'It\'s a ${_output[0]['label']
-                                .toString()
-                                .substring(2)
-                                }'.toUpperCase(),
+                            'It\'s a $_className'.toUpperCase(),
                             style: TextStyle(
                               color: Theme.of(context).primaryColor,
                               fontSize: 20.0,

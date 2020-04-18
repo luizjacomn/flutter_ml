@@ -69,6 +69,12 @@ class _DetectorPageState extends State<DetectorPage> {
     return matcher.group(0);
   }
 
+  String get _confidenceLevel {
+    double confidence = _output[0]['confidence'];
+
+    return (confidence * 100).toStringAsFixed(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,6 +102,15 @@ class _DetectorPageState extends State<DetectorPage> {
                           ),
                         )
                       : const Text('Pick an image on your gallery'),
+                  if (_output != null)
+                    Text(
+                      'Confidence level: $_confidenceLevel%',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                 ],
               ),
       ),
